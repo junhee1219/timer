@@ -322,7 +322,7 @@
   <script>
     // Service Worker는 http/https에서만 동작
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      navigator.serviceWorker.register('/sw.js');
+      navigator.serviceWorker.register('./sw.js');
     }
   </script>
 </body>

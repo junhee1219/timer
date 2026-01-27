@@ -1,13 +1,13 @@
-const CACHE_NAME = 'timer-v1';
+const CACHE_NAME = 'timer-v2';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/css/style.css',
-  '/js/storage.js',
-  '/js/timer.js',
-  '/js/app.js',
-  '/icons/icon.svg',
-  '/manifest.json'
+  './',
+  './index.html',
+  './css/style.css',
+  './js/storage.js',
+  './js/timer.js',
+  './js/app.js',
+  './icons/icon.svg',
+  './manifest.json'
 ];
 
 // 설치 시 캐시
