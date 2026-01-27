@@ -267,6 +267,15 @@ const App = (function() {
 
   // Home
   let openedCard = null;
+  let dragState = {
+    isDragging: false,
+    draggedEl: null,
+    draggedIndex: -1,
+    placeholder: null,
+    startY: 0,
+    currentY: 0,
+    longPressTimer: null
+  };
 
   function renderHome() {
     const presets = Storage.getPresets();
@@ -284,9 +293,10 @@ const App = (function() {
       return;
     }
 
-    presets.forEach(preset => {
+    presets.forEach((preset, index) => {
       const wrapper = document.createElement('div');
       wrapper.className = 'preset-card-wrapper';
+      wrapper.dataset.index = index;
 
       wrapper.innerHTML = `
         <div class="preset-card-actions right">
@@ -326,6 +336,7 @@ const App = (function() {
       let currentX = 0;
       let isDragging = false;
       let isOpen = null; // 'left', 'right', or null
+      let swipeStarted = false; // 좌우 스와이프 시작 여부
 
       function closeSwipe() {
         card.style.transition = 'transform 0.2s ease';
@@ -335,36 +346,81 @@ const App = (function() {
       }
 
       card.addEventListener('touchstart', (e) => {
+        // 드래그 중이면 무시
+        if (dragState.isDragging) return;
+
         // 다른 카드가 열려있으면 닫고 현재 터치 무시
         if (openedCard && openedCard !== wrapper) {
           openedCard.closeSwipe();
           e.preventDefault();
           return;
         }
+
         startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
         isDragging = true;
         card.style.transition = 'none';
+
+        // 롱프레스 감지 (500ms)
+        dragState.longPressTimer = setTimeout(() => {
+          if (isDragging && Math.abs(currentX) < 10) {
+            startDrag(wrapper, index, e.touches[0].clientY);
+            isDragging = false;
+          }
+        }, 500);
       }, { passive: false });
 
       const SWIPE_THRESHOLD = 70;
+      let startY = 0;
 
       card.addEventListener('touchmove', (e) => {
+        // 드래그 모드
+        if (dragState.isDragging) {
+          e.preventDefault();
+          handleDragMove(e.touches[0].clientY);
+          return;
+        }
+
         if (!isDragging) return;
-        const diff = e.touches[0].clientX - startX;
+
+        const diffX = e.touches[0].clientX - startX;
+        const diffY = e.touches[0].clientY - startY;
+
+        // 수직 이동이 크면 롱프레스 취소
+        if (Math.abs(diffY) > 10) {
+          clearTimeout(dragState.longPressTimer);
+        }
+
+        // 좌우 스와이프 데드존 (20px 이상 움직여야 스와이프 시작)
+        const DEADZONE = 20;
+        if (!swipeStarted && !isOpen && Math.abs(diffX) < DEADZONE) {
+          return;
+        }
+        swipeStarted = true;
 
         if (isOpen === 'left') {
-          currentX = Math.max(-SWIPE_THRESHOLD, Math.min(0, diff - SWIPE_THRESHOLD));
+          currentX = Math.max(-SWIPE_THRESHOLD, Math.min(0, diffX - SWIPE_THRESHOLD));
         } else if (isOpen === 'right') {
-          currentX = Math.max(0, Math.min(SWIPE_THRESHOLD, diff + SWIPE_THRESHOLD));
+          currentX = Math.max(0, Math.min(SWIPE_THRESHOLD, diffX + SWIPE_THRESHOLD));
         } else {
-          currentX = Math.max(-SWIPE_THRESHOLD, Math.min(SWIPE_THRESHOLD, diff));
+          // 데드존 이후부터 움직이도록 조정
+          const adjustedDiff = diffX > 0 ? diffX - DEADZONE : diffX + DEADZONE;
+          currentX = Math.max(-SWIPE_THRESHOLD, Math.min(SWIPE_THRESHOLD, adjustedDiff));
         }
 
         card.style.transform = `translateX(${currentX}px)`;
-      });
+      }, { passive: false });
 
       card.addEventListener('touchend', () => {
+        clearTimeout(dragState.longPressTimer);
+
+        if (dragState.isDragging) {
+          endDrag();
+          return;
+        }
+
         isDragging = false;
+        swipeStarted = false;
         card.style.transition = 'transform 0.2s ease';
 
         if (currentX > 35) {
@@ -418,6 +474,102 @@ const App = (function() {
 
       elements.presetsList.appendChild(wrapper);
     });
+  }
+
+  function startDrag(wrapper, index, clientY) {
+    dragState.isDragging = true;
+    dragState.draggedEl = wrapper;
+    dragState.draggedIndex = index;
+    dragState.startY = clientY;
+    dragState.currentY = clientY;
+
+    // 플레이스홀더 생성
+    dragState.placeholder = document.createElement('div');
+    dragState.placeholder.className = 'preset-card-placeholder';
+    dragState.placeholder.style.height = wrapper.offsetHeight + 'px';
+
+    // 드래그 중인 카드 스타일
+    const rect = wrapper.getBoundingClientRect();
+    wrapper.classList.add('dragging');
+    wrapper.style.position = 'fixed';
+    wrapper.style.top = rect.top + 'px';
+    wrapper.style.left = rect.left + 'px';
+    wrapper.style.width = rect.width + 'px';
+    wrapper.style.zIndex = '1000';
+
+    // 플레이스홀더 삽입
+    wrapper.parentNode.insertBefore(dragState.placeholder, wrapper);
+
+    // 진동 피드백
+    if (navigator.vibrate) navigator.vibrate(50);
+  }
+
+  function handleDragMove(clientY) {
+    if (!dragState.isDragging) return;
+
+    const diff = clientY - dragState.startY;
+    dragState.draggedEl.style.top = (dragState.draggedEl.getBoundingClientRect().top - dragState.currentY + clientY) + 'px';
+    dragState.currentY = clientY;
+
+    // 다른 카드들과 위치 비교해서 플레이스홀더 이동
+    const cards = elements.presetsList.querySelectorAll('.preset-card-wrapper:not(.dragging)');
+    const placeholderRect = dragState.placeholder.getBoundingClientRect();
+
+    cards.forEach((card, i) => {
+      const cardRect = card.getBoundingClientRect();
+      const cardMiddle = cardRect.top + cardRect.height / 2;
+
+      if (clientY < cardMiddle && placeholderRect.top > cardRect.top) {
+        card.parentNode.insertBefore(dragState.placeholder, card);
+      } else if (clientY > cardMiddle && placeholderRect.top < cardRect.top) {
+        card.parentNode.insertBefore(dragState.placeholder, card.nextSibling);
+      }
+    });
+  }
+
+  function endDrag() {
+    if (!dragState.isDragging) return;
+
+    // 새 위치 계산
+    const cards = Array.from(elements.presetsList.querySelectorAll('.preset-card-wrapper:not(.dragging)'));
+    const placeholderIndex = cards.findIndex((card, i) => {
+      const next = cards[i];
+      if (!next) return true;
+      return dragState.placeholder.compareDocumentPosition(next) & Node.DOCUMENT_POSITION_FOLLOWING;
+    });
+
+    let newIndex = 0;
+    const children = Array.from(elements.presetsList.children);
+    children.forEach((child, i) => {
+      if (child === dragState.placeholder) newIndex = i;
+    });
+
+    // 드래그 중인 카드 원위치 스타일 제거
+    dragState.draggedEl.classList.remove('dragging');
+    dragState.draggedEl.style.position = '';
+    dragState.draggedEl.style.top = '';
+    dragState.draggedEl.style.left = '';
+    dragState.draggedEl.style.width = '';
+    dragState.draggedEl.style.zIndex = '';
+
+    // 플레이스홀더를 드래그된 카드로 교체
+    dragState.placeholder.parentNode.insertBefore(dragState.draggedEl, dragState.placeholder);
+    dragState.placeholder.remove();
+
+    // 프리셋 순서 업데이트
+    if (dragState.draggedIndex !== newIndex) {
+      const presets = Storage.getPresets();
+      const [moved] = presets.splice(dragState.draggedIndex, 1);
+      presets.splice(newIndex, 0, moved);
+      Storage.savePresets(presets);
+      showToast('순서가 변경됐어요');
+    }
+
+    // 상태 초기화
+    dragState.isDragging = false;
+    dragState.draggedEl = null;
+    dragState.draggedIndex = -1;
+    dragState.placeholder = null;
   }
 
   function getPresetDetail(preset) {
