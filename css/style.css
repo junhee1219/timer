@@ -222,52 +222,57 @@ ul {
   gap: var(--space-md);
 }
 
+/* Presets list - hide overflow for swipe */
+.presets-list {
+  overflow-x: hidden;
+}
+
 /* Swipeable card container */
 .preset-card-wrapper {
   position: relative;
-  overflow: hidden;
   border-radius: var(--radius-md);
+  overflow: hidden;
 }
 
 .preset-card-actions {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
-  align-items: stretch;
+  align-items: center;
+  z-index: 0;
 }
 
 .preset-card-actions.left {
-  left: 0;
-  transform: translateX(-100%);
+  left: var(--space-md);
 }
 
 .preset-card-actions.right {
-  right: 0;
-  transform: translateX(100%);
+  right: var(--space-md);
 }
 
 .preset-card-action {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 80px;
-  height: 100%;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
   color: white;
   border: none;
   cursor: pointer;
 }
 
 .preset-card-action.edit {
-  background: var(--color-primary);
+  background: #5B7FFF;
 }
 
 .preset-card-action.delete {
-  background: var(--color-danger);
+  background: #FF6B6B;
 }
 
 .preset-card-action:active {
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
 .preset-card {
@@ -281,10 +286,15 @@ ul {
   cursor: pointer;
   position: relative;
   z-index: 1;
+  will-change: transform;
 }
 
 .preset-card:active {
   background: var(--color-surface-elevated);
+}
+
+.preset-card-wrapper:has(.preset-card[style*="translateX"]) .preset-card:active {
+  background: var(--color-surface);
 }
 
 .preset-info {
@@ -318,9 +328,27 @@ ul {
   font-size: 0.75rem;
   padding: 2px 8px;
   border-radius: var(--radius-full);
-  background: var(--color-primary-light);
-  color: var(--color-primary);
   margin-right: var(--space-sm);
+}
+
+.preset-type-badge.simple {
+  background: #E8F5E9;
+  color: #2E7D32;
+}
+
+.preset-type-badge.interval {
+  background: #FFF3E0;
+  color: #E65100;
+}
+
+.preset-type-badge.pomodoro {
+  background: #FCE4EC;
+  color: #C2185B;
+}
+
+.preset-type-badge.stopwatch {
+  background: #E3F2FD;
+  color: #1565C0;
 }
 
 
@@ -562,6 +590,26 @@ ul {
   background: var(--color-primary);
   border-color: var(--color-primary);
   color: white;
+}
+
+.type-tab[data-type="simple"].active {
+  background: #2E7D32;
+  border-color: #2E7D32;
+}
+
+.type-tab[data-type="interval"].active {
+  background: #E65100;
+  border-color: #E65100;
+}
+
+.type-tab[data-type="pomodoro"].active {
+  background: #C2185B;
+  border-color: #C2185B;
+}
+
+.type-tab[data-type="stopwatch"].active {
+  background: #1565C0;
+  border-color: #1565C0;
 }
 
 /* Time picker */

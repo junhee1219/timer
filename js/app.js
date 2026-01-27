@@ -87,6 +87,14 @@ const App = (function() {
       showScreen('settings');
     });
 
+    // 홈 화면 빈 곳 터치하면 열린 스와이프 닫기
+    document.querySelector('.home-content').addEventListener('touchstart', (e) => {
+      if (openedCard && !e.target.closest('.preset-card-wrapper')) {
+        openedCard.closeSwipe();
+        e.preventDefault();
+      }
+    }, { passive: false });
+
     // Nickname
     document.getElementById('greeting').addEventListener('click', openNicknameEditor);
     document.getElementById('nickname-edit-btn').addEventListener('click', openNicknameEditor);
@@ -251,9 +259,12 @@ const App = (function() {
   }
 
   // Home
+  let openedCard = null;
+
   function renderHome() {
     const presets = Storage.getPresets();
     elements.presetsList.innerHTML = '';
+    openedCard = null;
 
     if (presets.length === 0) {
       elements.presetsList.innerHTML = `
@@ -289,7 +300,7 @@ const App = (function() {
         <div class="preset-card">
           <div class="preset-info">
             <div class="preset-name">
-              <span class="preset-type-badge">${TYPE_LABELS[preset.type]}</span>
+              <span class="preset-type-badge ${preset.type}">${TYPE_LABELS[preset.type]}</span>
               ${preset.name}
             </div>
             <div class="preset-detail">${getPresetDetail(preset)}</div>
@@ -313,24 +324,33 @@ const App = (function() {
         card.style.transition = 'transform 0.2s ease';
         card.style.transform = '';
         isOpen = null;
+        openedCard = null;
       }
 
       card.addEventListener('touchstart', (e) => {
+        // 다른 카드가 열려있으면 닫고 현재 터치 무시
+        if (openedCard && openedCard !== wrapper) {
+          openedCard.closeSwipe();
+          e.preventDefault();
+          return;
+        }
         startX = e.touches[0].clientX;
         isDragging = true;
         card.style.transition = 'none';
-      });
+      }, { passive: false });
+
+      const SWIPE_THRESHOLD = 70;
 
       card.addEventListener('touchmove', (e) => {
         if (!isDragging) return;
         const diff = e.touches[0].clientX - startX;
 
         if (isOpen === 'left') {
-          currentX = Math.max(-80, Math.min(0, diff - 80));
+          currentX = Math.max(-SWIPE_THRESHOLD, Math.min(0, diff - SWIPE_THRESHOLD));
         } else if (isOpen === 'right') {
-          currentX = Math.max(0, Math.min(80, diff + 80));
+          currentX = Math.max(0, Math.min(SWIPE_THRESHOLD, diff + SWIPE_THRESHOLD));
         } else {
-          currentX = Math.max(-80, Math.min(80, diff));
+          currentX = Math.max(-SWIPE_THRESHOLD, Math.min(SWIPE_THRESHOLD, diff));
         }
 
         card.style.transform = `translateX(${currentX}px)`;
@@ -340,12 +360,16 @@ const App = (function() {
         isDragging = false;
         card.style.transition = 'transform 0.2s ease';
 
-        if (currentX > 40) {
-          card.style.transform = 'translateX(80px)';
+        if (currentX > 35) {
+          card.style.transform = `translateX(${SWIPE_THRESHOLD}px)`;
           isOpen = 'right';
-        } else if (currentX < -40) {
-          card.style.transform = 'translateX(-80px)';
+          openedCard = wrapper;
+          openedCard.closeSwipe = closeSwipe;
+        } else if (currentX < -35) {
+          card.style.transform = `translateX(-${SWIPE_THRESHOLD}px)`;
           isOpen = 'left';
+          openedCard = wrapper;
+          openedCard.closeSwipe = closeSwipe;
         } else {
           card.style.transform = '';
           isOpen = null;
@@ -408,9 +432,13 @@ const App = (function() {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
-    if (h > 0) return `${h}시간 ${m}분`;
-    if (m > 0) return `${m}분${s > 0 ? ' ' + s + '초' : ''}`;
-    return `${s}초`;
+
+    let parts = [];
+    if (h > 0) parts.push(`${h}시간`);
+    if (m > 0) parts.push(`${m}분`);
+    if (s > 0) parts.push(`${s}초`);
+
+    return parts.length > 0 ? parts.join(' ') : '0초';
   }
 
   // Timer
@@ -625,12 +653,21 @@ const App = (function() {
     });
   }
 
+  function getDefaultPresetName() {
+    const now = new Date();
+    const days = ['일', '월', '화', '수', '목', '금', '토'];
+    const month = now.getMonth() + 1;
+    const date = now.getDate();
+    const day = days[now.getDay()];
+    const hour = now.getHours();
+    const minute = now.getMinutes().toString().padStart(2, '0');
+    return `${month}/${date}(${day}) ${hour}:${minute}`;
+  }
+
   function savePreset() {
-    const name = elements.presetName.value.trim();
+    let name = elements.presetName.value.trim();
     if (!name) {
-      showToast('타이머 이름을 입력해주세요');
-      elements.presetName.focus();
-      return;
+      name = getDefaultPresetName();
     }
 
     if (currentType === 'simple') {

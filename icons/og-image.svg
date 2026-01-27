@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="100%" style="stop-color:#16213e"/>
+    </linearGradient>
+    <linearGradient id="timerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4A90D9"/>
+      <stop offset="100%" style="stop-color:#357ABD"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGrad)"/>
+
+  <!-- Decorative circles -->
+  <circle cx="100" cy="100" r="200" fill="#4A90D9" opacity="0.1"/>
+  <circle cx="1100" cy="530" r="250" fill="#4A90D9" opacity="0.1"/>
+
+  <!-- Timer icon -->
+  <g transform="translate(200, 165)">
+    <circle cx="150" cy="150" r="130" fill="none" stroke="#4A90D9" stroke-width="20" opacity="0.3"/>
+    <circle cx="150" cy="150" r="130" fill="none" stroke="#4A90D9" stroke-width="20" stroke-dasharray="408 816" stroke-linecap="round"/>
+    <circle cx="150" cy="150" r="8" fill="#4A90D9"/>
+    <line x1="150" y1="150" x2="150" y2="60" stroke="#4A90D9" stroke-width="10" stroke-linecap="round"/>
+    <line x1="150" y1="150" x2="220" y2="180" stroke="#4A90D9" stroke-width="6" stroke-linecap="round"/>
+  </g>
+
+  <!-- Text -->
+  <text x="520" y="280" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="72" font-weight="700" fill="white">타이머</text>
+  <text x="520" y="360" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="32" fill="#adb5bd">나만의 커스텀 타이머</text>
+
+  <!-- Features -->
+  <g transform="translate(520, 420)" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" fill="#6c757d">
+    <text x="0" y="0">뽀모도로</text>
+    <circle cx="120" cy="-8" r="4" fill="#4A90D9"/>
+    <text x="140" y="0">인터벌</text>
+    <circle cx="240" cy="-8" r="4" fill="#28a745"/>
+    <text x="260" y="0">스톱워치</text>
+  </g>
+</svg>

@@ -11,15 +11,16 @@
   <!-- SEO & 공유용 메타 태그 -->
   <meta name="description" content="나만의 커스텀 타이머. 뽀모도로, 인터벌, 스톱워치까지 한 곳에서.">
   <meta property="og:title" content="타이머 - 나만의 커스텀 타이머">
-  <meta property="og:description" content="뽀모도로, 인터벌, 스톱워치까지. 집중과 휴식을 위한 최고의 타이머 앱.">
+  <meta property="og:description" content="뽀모도로, 인터벌, 스톱워치까지. 집중과 휴식을 위한 커스텀 타이머 앱.">
   <meta property="og:type" content="website">
-  <meta property="og:image" content="icons/og-image.png">
+  <meta property="og:image" content="icons/og-image.svg">
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="icons/og-image.svg">
 
   <title>타이머</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏱️</text></svg>">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="apple-touch-icon" href="icons/icon.svg">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -311,5 +312,10 @@
   <script src="js/storage.js"></script>
   <script src="js/timer.js"></script>
   <script src="js/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
+  </script>
 </body>
 </html>
