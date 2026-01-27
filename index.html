@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a1a2e" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+
+  <!-- SEO & 공유용 메타 태그 -->
+  <meta name="description" content="나만의 커스텀 타이머. 뽀모도로, 인터벌, 스톱워치까지 한 곳에서.">
+  <meta property="og:title" content="타이머 - 나만의 커스텀 타이머">
+  <meta property="og:description" content="뽀모도로, 인터벌, 스톱워치까지. 집중과 휴식을 위한 최고의 타이머 앱.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="icons/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <title>타이머</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏱️</text></svg>">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- 홈 화면 -->
+    <section id="home" class="screen active">
+      <header class="header">
+        <button class="header-btn" id="nickname-edit-btn" aria-label="닉네임 설정">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </button>
+        <h1 class="header-title">타이머</h1>
+        <button class="header-btn" id="settings-btn" aria-label="설정">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+          </svg>
+        </button>
+      </header>
+      <main class="home-content">
+        <div id="greeting" class="greeting" style="display:none"></div>
+        <div id="presets-list" class="presets-list"></div>
+        <button class="fab" id="add-preset-btn" aria-label="새 타이머 만들기">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+      </main>
+    </section>
+
+    <!-- 타이머 실행 화면 -->
+    <section id="timer" class="screen">
+      <header class="header">
+        <button class="header-btn" id="timer-back-btn" aria-label="뒤로">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <h1 class="header-title" id="timer-title">타이머</h1>
+        <div class="header-btn-placeholder"></div>
+      </header>
+      <main class="timer-content">
+        <div class="timer-phase" id="timer-phase">준비</div>
+        <div class="timer-display">
+          <svg class="timer-circle" viewBox="0 0 200 200">
+            <circle class="timer-circle-bg" cx="100" cy="100" r="90"/>
+            <circle class="timer-circle-progress" cx="100" cy="100" r="90" id="timer-progress"/>
+          </svg>
+          <div class="timer-time" id="timer-time">00:00</div>
+        </div>
+        <div class="timer-info" id="timer-info"></div>
+        <div class="timer-controls">
+          <button class="control-btn secondary" id="timer-skip-btn" aria-label="건너뛰기">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5 4 15 12 5 20 5 4"/>
+              <line x1="19" y1="5" x2="19" y2="19"/>
+            </svg>
+          </button>
+          <button class="control-btn primary" id="timer-play-btn" aria-label="시작">
+            <svg class="icon-play" width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            <svg class="icon-pause" width="32" height="32" viewBox="0 0 24 24" fill="currentColor" style="display:none">
+              <rect x="6" y="4" width="4" height="16"/>
+              <rect x="14" y="4" width="4" height="16"/>
+            </svg>
+          </button>
+          <button class="control-btn secondary" id="timer-stop-btn" aria-label="중지">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="6" y="6" width="12" height="12"/>
+            </svg>
+          </button>
+        </div>
+        <!-- 스톱워치 랩 타임 -->
+        <div class="lap-times" id="lap-times" style="display:none">
+          <div class="lap-times-header">랩 타임</div>
+          <ul class="lap-times-list" id="lap-times-list"></ul>
+        </div>
+        <button class="control-btn secondary lap-btn" id="timer-lap-btn" style="display:none" aria-label="랩">
+          랩
+        </button>
+      </main>
+    </section>
+
+    <!-- 프리셋 편집 화면 -->
+    <section id="preset-editor" class="screen">
+      <header class="header">
+        <button class="header-btn" id="editor-cancel-btn" aria-label="취소">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <h1 class="header-title" id="editor-title">새 타이머</h1>
+        <button class="header-btn text-btn" id="editor-save-btn">저장</button>
+      </header>
+      <main class="editor-content">
+        <div class="form-group">
+          <label class="form-label" for="preset-name">이름</label>
+          <input type="text" class="form-input" id="preset-name" placeholder="타이머 이름">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">종류</label>
+          <div class="type-tabs" id="type-tabs">
+            <button class="type-tab active" data-type="simple">기본</button>
+            <button class="type-tab" data-type="interval">인터벌</button>
+            <button class="type-tab" data-type="pomodoro">뽀모도로</button>
+            <button class="type-tab" data-type="stopwatch">스톱워치</button>
+          </div>
+        </div>
+
+        <!-- 기본 타이머 설정 -->
+        <div class="type-config" id="config-simple">
+          <div class="form-group">
+            <label class="form-label">시간</label>
+            <div class="time-picker">
+              <div class="time-picker-unit">
+                <button class="stepper-btn" data-target="simple-hours" data-dir="up">+</button>
+                <input type="number" class="time-input" id="simple-hours" value="0" min="0" max="23">
+                <span class="time-label">시간</span>
+                <button class="stepper-btn" data-target="simple-hours" data-dir="down">-</button>
+              </div>
+              <div class="time-picker-unit">
+                <button class="stepper-btn" data-target="simple-minutes" data-dir="up">+</button>
+                <input type="number" class="time-input" id="simple-minutes" value="5" min="0" max="59">
+                <span class="time-label">분</span>
+                <button class="stepper-btn" data-target="simple-minutes" data-dir="down">-</button>
+              </div>
+              <div class="time-picker-unit">
+                <button class="stepper-btn" data-target="simple-seconds" data-dir="up">+</button>
+                <input type="number" class="time-input" id="simple-seconds" value="0" min="0" max="59">
+                <span class="time-label">초</span>
+                <button class="stepper-btn" data-target="simple-seconds" data-dir="down">-</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 인터벌 타이머 설정 -->
+        <div class="type-config" id="config-interval" style="display:none">
+          <div class="form-group">
+            <label class="form-label">구간</label>
+            <div class="segments-list" id="segments-list"></div>
+            <button class="add-segment-btn" id="add-segment-btn">+ 구간 추가</button>
+          </div>
+          <div class="form-group">
+            <label class="form-label">반복 횟수</label>
+            <div class="stepper">
+              <button class="stepper-btn" data-target="interval-cycles" data-dir="down">-</button>
+              <input type="number" class="stepper-input" id="interval-cycles" value="3" min="1" max="99">
+              <span class="stepper-suffix">회</span>
+              <button class="stepper-btn" data-target="interval-cycles" data-dir="up">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 뽀모도로 설정 -->
+        <div class="type-config" id="config-pomodoro" style="display:none">
+          <div class="form-group">
+            <label class="form-label">집중 시간</label>
+            <div class="stepper">
+              <button class="stepper-btn" data-target="pomodoro-focus" data-dir="down">-</button>
+              <input type="number" class="stepper-input" id="pomodoro-focus" value="25" min="1" max="120">
+              <span class="stepper-suffix">분</span>
+              <button class="stepper-btn" data-target="pomodoro-focus" data-dir="up">+</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">짧은 휴식</label>
+            <div class="stepper">
+              <button class="stepper-btn" data-target="pomodoro-short-break" data-dir="down">-</button>
+              <input type="number" class="stepper-input" id="pomodoro-short-break" value="5" min="1" max="30">
+              <span class="stepper-suffix">분</span>
+              <button class="stepper-btn" data-target="pomodoro-short-break" data-dir="up">+</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">긴 휴식</label>
+            <div class="stepper">
+              <button class="stepper-btn" data-target="pomodoro-long-break" data-dir="down">-</button>
+              <input type="number" class="stepper-input" id="pomodoro-long-break" value="15" min="5" max="60">
+              <span class="stepper-suffix">분</span>
+              <button class="stepper-btn" data-target="pomodoro-long-break" data-dir="up">+</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">긴 휴식 전 사이클</label>
+            <div class="stepper">
+              <button class="stepper-btn" data-target="pomodoro-cycles" data-dir="down">-</button>
+              <input type="number" class="stepper-input" id="pomodoro-cycles" value="4" min="2" max="10">
+              <span class="stepper-suffix">회</span>
+              <button class="stepper-btn" data-target="pomodoro-cycles" data-dir="up">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 스톱워치 설정 (설정 없음) -->
+        <div class="type-config" id="config-stopwatch" style="display:none">
+          <div class="empty-config">
+            <p>스톱워치는 별도 설정이 필요 없어요.</p>
+            <p class="text-muted">시작하면 경과 시간을 측정합니다.</p>
+          </div>
+        </div>
+
+        <!-- 삭제 버튼 (편집 시만 표시) -->
+        <button class="delete-btn" id="delete-preset-btn" style="display:none">타이머 삭제</button>
+      </main>
+    </section>
+
+    <!-- 설정 화면 -->
+    <section id="settings" class="screen">
+      <header class="header">
+        <button class="header-btn" id="settings-back-btn" aria-label="뒤로">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <h1 class="header-title">설정</h1>
+        <div class="header-btn-placeholder"></div>
+      </header>
+      <main class="settings-content">
+        <div class="settings-section">
+          <h2 class="settings-section-title">화면</h2>
+          <div class="settings-row">
+            <span>테마</span>
+            <select class="form-select" id="setting-theme">
+              <option value="system">시스템 설정</option>
+              <option value="light">라이트</option>
+              <option value="dark">다크</option>
+            </select>
+          </div>
+          <div class="settings-row">
+            <span>화면 꺼짐 방지</span>
+            <label class="toggle">
+              <input type="checkbox" id="setting-wake-lock" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h2 class="settings-section-title">데이터</h2>
+          <button class="settings-btn danger" id="reset-presets-btn">프리셋 초기화</button>
+          <button class="settings-btn danger" id="reset-all-btn">모든 데이터 삭제</button>
+        </div>
+
+        <div class="settings-section">
+          <h2 class="settings-section-title">정보</h2>
+          <div class="settings-row">
+            <span>버전</span>
+            <span class="text-muted">1.0.0</span>
+          </div>
+        </div>
+      </main>
+    </section>
+
+    <!-- 토스트 메시지 -->
+    <div class="toast" id="toast"></div>
+
+    <!-- 확인 다이얼로그 -->
+    <div class="dialog-overlay" id="dialog-overlay">
+      <div class="dialog">
+        <div class="dialog-title" id="dialog-title"></div>
+        <div class="dialog-message" id="dialog-message"></div>
+        <div class="dialog-buttons">
+          <button class="dialog-btn" id="dialog-cancel">취소</button>
+          <button class="dialog-btn primary" id="dialog-confirm">확인</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 닉네임 모달 -->
+    <div class="dialog-overlay" id="nickname-modal">
+      <div class="dialog">
+        <div class="dialog-title">닉네임 설정</div>
+        <div class="dialog-message">타이머에서 사용할 이름을 입력해주세요</div>
+        <input type="text" class="form-input" id="nickname-input" placeholder="닉네임" maxlength="20">
+        <div class="dialog-buttons">
+          <button class="dialog-btn" id="nickname-cancel-btn">취소</button>
+          <button class="dialog-btn primary" id="nickname-save-btn">저장</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/timer.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
