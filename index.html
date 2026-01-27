@@ -262,6 +262,13 @@
               <span class="toggle-slider"></span>
             </label>
           </div>
+          <div class="settings-row">
+            <span>원형 드래그로 시간 조절</span>
+            <label class="toggle">
+              <input type="checkbox" id="setting-circle-drag" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
         </div>
 
         <div class="settings-section">
@@ -274,7 +281,7 @@
           <h2 class="settings-section-title">정보</h2>
           <div class="settings-row">
             <span>버전</span>
-            <span class="text-muted">1.0.0</span>
+            <span class="text-muted">1.1.0</span>
           </div>
         </div>
       </main>
@@ -313,7 +320,8 @@
   <script src="js/timer.js"></script>
   <script src="js/app.js"></script>
   <script>
-    if ('serviceWorker' in navigator) {
+    // Service Worker는 http/https에서만 동작
+    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
       navigator.serviceWorker.register('/sw.js');
     }
   </script>

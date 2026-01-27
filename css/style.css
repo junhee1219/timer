@@ -383,6 +383,10 @@ ul {
   justify-content: center;
   padding: var(--space-lg);
   gap: var(--space-lg);
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .timer-phase {
@@ -399,6 +403,8 @@ ul {
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: grab;
+  touch-action: none;
 }
 
 .timer-circle {
@@ -420,8 +426,7 @@ ul {
   stroke-width: 8;
   stroke-linecap: round;
   stroke-dasharray: 565.48;
-  stroke-dashoffset: 0;
-  transition: stroke-dashoffset 0.5s linear, stroke var(--transition-fast);
+  /* stroke-dashoffset은 JavaScript로 제어 */
 }
 
 .timer-time {
@@ -549,17 +554,24 @@ ul {
 
 .form-select {
   padding: var(--space-sm) var(--space-md);
-  padding-right: var(--space-lg);
+  padding-right: var(--space-xl);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text);
   font-size: 1rem;
-  -webkit-appearance: none;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
+  position: relative;
+}
+
+/* 비iOS 기기에서만 커스텀 스타일 적용 */
+@supports not (-webkit-touch-callout: none) {
+  .form-select {
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+  }
 }
 
 .form-divider {
@@ -862,7 +874,7 @@ ul {
 .settings-content {
   flex: 1;
   padding: var(--space-md);
-  overflow-y: auto;
+  padding-bottom: calc(var(--space-xl) + var(--safe-bottom));
 }
 
 .settings-section {
@@ -1039,6 +1051,25 @@ ul {
   }
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: none;
   }
+}
+
+/* 설정 화면 - iOS select 피커 위치 문제 방지 */
+#settings.screen.active {
+  animation: none;
+  transform: none;
+}
+
+/* 타이머 화면 스크롤 방지 */
+#timer.screen {
+  overflow: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  touch-action: none;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: auto;
 }

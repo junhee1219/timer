@@ -55,7 +55,8 @@ const Storage = (function() {
     theme: 'system',
     keepScreenOn: true,
     defaultSoundEnabled: true,
-    defaultVibrationEnabled: true
+    defaultVibrationEnabled: true,
+    circleDragEnabled: true
   };
 
   function generateId() {

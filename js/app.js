@@ -128,6 +128,9 @@ const App = (function() {
     document.getElementById('timer-skip-btn').addEventListener('click', () => timer.skip());
     document.getElementById('timer-lap-btn').addEventListener('click', () => timer.lap());
 
+    // 원형 프로그레스 드래그로 시간 조절
+    setupCircleDrag();
+
     document.getElementById('timer-back-btn').addEventListener('click', () => {
       if (timer.state === 'running' || timer.state === 'paused') {
         showDialog({
@@ -191,6 +194,10 @@ const App = (function() {
 
     document.getElementById('setting-wake-lock').addEventListener('change', (e) => {
       Storage.updateSetting('keepScreenOn', e.target.checked);
+    });
+
+    document.getElementById('setting-circle-drag').addEventListener('change', (e) => {
+      Storage.updateSetting('circleDragEnabled', e.target.checked);
     });
 
     document.getElementById('reset-presets-btn').addEventListener('click', () => {
@@ -453,6 +460,9 @@ const App = (function() {
     elements.lapTimes.style.display = 'none';
     elements.lapTimesList.innerHTML = '';
 
+    // 초기 상태 설정 (원 비어있음)
+    elements.timerProgress.style.strokeDashoffset = CIRCLE_CIRCUMFERENCE + '';
+
     updateTimerDisplay(timer.getState());
     updateControls('idle');
     showScreen('timer');
@@ -463,9 +473,10 @@ const App = (function() {
     elements.timerTime.textContent = timer.formatTime(state.currentTime, isStopwatch);
 
     if (state.preset?.type === 'stopwatch') {
-      elements.timerProgress.style.strokeDashoffset = 0;
+      elements.timerProgress.style.strokeDashoffset = '0';
     } else {
-      elements.timerProgress.style.strokeDashoffset = CIRCLE_CIRCUMFERENCE * (1 - state.progress);
+      const offset = CIRCLE_CIRCUMFERENCE * (1 - state.progress);
+      elements.timerProgress.style.strokeDashoffset = offset + '';
     }
 
     elements.timerProgress.style.stroke = state.segmentColor;
@@ -733,6 +744,7 @@ const App = (function() {
     const settings = Storage.getSettings();
     document.getElementById('setting-theme').value = settings.theme;
     document.getElementById('setting-wake-lock').checked = settings.keepScreenOn;
+    document.getElementById('setting-circle-drag').checked = settings.circleDragEnabled;
   }
 
   function applyTheme(theme) {
@@ -788,6 +800,60 @@ const App = (function() {
   function hideDialog() {
     elements.dialogOverlay.classList.remove('show');
     dialogConfirmCallback = null;
+  }
+
+  // 원형 프로그레스 드래그
+  function setupCircleDrag() {
+    const timerDisplay = document.querySelector('.timer-display');
+    const progressCircle = document.getElementById('timer-progress');
+    let isDragging = false;
+
+    function getAngleFromEvent(e) {
+      const rect = timerDisplay.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+      const deltaX = clientX - centerX;
+      const deltaY = clientY - centerY;
+
+      // 각도 계산 (12시 방향이 0, 시계방향으로 증가)
+      let angle = Math.atan2(deltaX, -deltaY) * (180 / Math.PI);
+      if (angle < 0) angle += 360;
+
+      return angle / 360; // 0~1 사이의 progress 값으로 변환
+    }
+
+    function handleDragStart(e) {
+      if (timer.preset?.type === 'stopwatch') return;
+      if (!Storage.getSettings().circleDragEnabled) return;
+      isDragging = true;
+      handleDrag(e);
+    }
+
+    function handleDrag(e) {
+      if (!isDragging) return;
+      e.preventDefault();
+      const progress = getAngleFromEvent(e);
+      timer.seek(progress);
+    }
+
+    function handleDragEnd() {
+      if (!isDragging) return;
+      isDragging = false;
+    }
+
+    timerDisplay.addEventListener('touchstart', handleDragStart, { passive: false });
+    document.addEventListener('touchmove', handleDrag, { passive: false });
+    document.addEventListener('touchend', handleDragEnd);
+    document.addEventListener('touchcancel', handleDragEnd);
+
+    // 마우스 지원 (데스크톱 테스트용)
+    timerDisplay.addEventListener('mousedown', handleDragStart);
+    document.addEventListener('mousemove', handleDrag);
+    document.addEventListener('mouseup', handleDragEnd);
   }
 
   async function requestWakeLock() {

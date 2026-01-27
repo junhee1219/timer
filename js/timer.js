@@ -178,6 +178,18 @@ const TimerEngine = (function() {
       this.onLap?.(this.lapTimes);
     }
 
+    seek(progress) {
+      if (!this.preset || this.preset.type === 'stopwatch') return;
+      // progress: 0 = 시작, 1 = 끝
+      const clampedProgress = Math.max(0, Math.min(1, progress));
+      this.currentTime = this.totalTime * (1 - clampedProgress);
+      this.onTick?.(this.getState());
+    }
+
+    getCurrentSegmentTotalTime() {
+      return this.totalTime;
+    }
+
     complete() {
       this.state = 'idle';
       clearInterval(this.intervalId);
