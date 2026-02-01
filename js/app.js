@@ -15,6 +15,7 @@ const App = (function() {
   let currentType = 'simple';
   let segments = [];
   let dialogConfirmCallback = null;
+  let currentTimerStartedAt = null;
 
   const screens = {};
   const elements = {};
@@ -26,6 +27,7 @@ const App = (function() {
     screens.timer = document.getElementById('timer');
     screens['preset-editor'] = document.getElementById('preset-editor');
     screens.settings = document.getElementById('settings');
+    screens.records = document.getElementById('records');
 
     cacheElements();
     applyTheme(Storage.getSettings().theme);
@@ -35,6 +37,7 @@ const App = (function() {
     setupMediaSession();
     renderHome();
     renderGreeting();
+    renderTodaySummary();
   }
 
   function cacheElements() {
@@ -77,6 +80,7 @@ const App = (function() {
       elements.timerPhase.textContent = '완료!';
       elements.timerInfo.textContent = '수고했어요';
       clearMediaSession();
+      saveTimerRecord(state);
     };
     timer.onLap = renderLapTimes;
   }
@@ -114,9 +118,13 @@ const App = (function() {
 
     // Timer
     document.getElementById('timer-play-btn').addEventListener('click', () => {
+      const wasIdle = timer.state === 'idle';
       const state = timer.toggle();
       updateControls(state);
       if (state === 'running') {
+        if (wasIdle && !currentTimerStartedAt) {
+          currentTimerStartedAt = new Date().toISOString();
+        }
         requestWakeLock();
         updateMediaSession(timer.getState());
       }
@@ -198,6 +206,12 @@ const App = (function() {
     // Settings
     document.getElementById('settings-back-btn').addEventListener('click', () => showScreen('home'));
 
+    // Records
+    document.getElementById('records-back-btn').addEventListener('click', () => {
+      showScreen('home');
+      renderTodaySummary();
+    });
+
     document.getElementById('setting-theme').addEventListener('change', (e) => {
       Storage.updateSetting('theme', e.target.value);
       applyTheme(e.target.value);
@@ -233,6 +247,7 @@ const App = (function() {
           applyTheme('system');
           loadSettings();
           renderHome();
+          renderTodaySummary();
         }
       });
     });
@@ -615,6 +630,7 @@ const App = (function() {
   function playPreset(preset) {
     timer.load(preset);
     elements.timerTitle.textContent = preset.name;
+    currentTimerStartedAt = null;
 
     const isStopwatch = preset.type === 'stopwatch';
     const isSimple = preset.type === 'simple';
@@ -629,6 +645,28 @@ const App = (function() {
     updateTimerDisplay(timer.getState());
     updateControls('idle');
     showScreen('timer');
+  }
+
+  function saveTimerRecord(state) {
+    if (!state.preset || state.preset.type === 'stopwatch') return;
+    if (!currentTimerStartedAt) return;
+
+    const completedAt = new Date().toISOString();
+    const startedAt = currentTimerStartedAt;
+    const duration = Math.round((new Date(completedAt) - new Date(startedAt)) / 1000);
+
+    Storage.addRecord({
+      presetId: state.preset.id,
+      presetName: state.preset.name,
+      presetType: state.preset.type,
+      startedAt,
+      completedAt,
+      duration,
+      memo: ''
+    });
+
+    currentTimerStartedAt = null;
+    renderTodaySummary();
   }
 
   function updateTimerDisplay(state) {
@@ -916,6 +954,177 @@ const App = (function() {
     } else {
       document.documentElement.setAttribute('data-theme', theme);
     }
+  }
+
+  // Today Summary
+  function renderTodaySummary() {
+    const container = document.getElementById('today-summary');
+    if (!container) return;
+
+    const summary = Storage.getDailySummary();
+    const hasRecords = summary.feeding.count > 0 || summary.pumping.count > 0 || summary.other.count > 0;
+
+    if (!hasRecords) {
+      container.style.display = 'none';
+      return;
+    }
+
+    container.style.display = '';
+    const totalMinutes = Math.round(summary.totalDuration / 60);
+
+    let items = [];
+    if (summary.feeding.count > 0) {
+      items.push(`<span class="summary-item"><span class="summary-icon">🍼</span>${summary.feeding.count}회 수유</span>`);
+    }
+    if (summary.pumping.count > 0) {
+      items.push(`<span class="summary-item"><span class="summary-icon">🧴</span>${summary.pumping.count}회 유축</span>`);
+    }
+    if (summary.other.count > 0) {
+      items.push(`<span class="summary-item"><span class="summary-icon">⏱️</span>${summary.other.count}회 기타</span>`);
+    }
+    items.push(`<span class="summary-item"><span class="summary-icon">⏱️</span>${totalMinutes}분</span>`);
+
+    container.innerHTML = `
+      <div class="summary-header">
+        <span>오늘의 기록</span>
+        <button class="summary-more-btn" id="view-records-btn">전체 보기</button>
+      </div>
+      <div class="summary-stats">${items.join('')}</div>
+    `;
+
+    document.getElementById('view-records-btn').addEventListener('click', () => {
+      openRecordsScreen();
+    });
+  }
+
+  // Records Screen
+  let currentRecordsDate = new Date();
+
+  function openRecordsScreen() {
+    currentRecordsDate = new Date();
+    renderRecordsScreen();
+    showScreen('records');
+  }
+
+  function renderRecordsScreen() {
+    const container = document.getElementById('records-content');
+    if (!container) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const twoDaysAgo = new Date(today);
+    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+
+    const currentDate = new Date(currentRecordsDate);
+    currentDate.setHours(0, 0, 0, 0);
+
+    const tabs = [
+      { label: '2일 전', date: twoDaysAgo },
+      { label: '어제', date: yesterday },
+      { label: '오늘', date: today }
+    ];
+
+    const records = Storage.getRecordsByDate(currentRecordsDate);
+    const summary = Storage.getDailySummary(currentRecordsDate);
+
+    const dateStr = formatDateKorean(currentRecordsDate);
+    const summaryParts = [];
+    if (summary.feeding.count > 0) summaryParts.push(`수유 ${summary.feeding.count}회`);
+    if (summary.pumping.count > 0) summaryParts.push(`유축 ${summary.pumping.count}회`);
+    if (summary.other.count > 0) summaryParts.push(`기타 ${summary.other.count}회`);
+    const totalMinutes = Math.round(summary.totalDuration / 60);
+    if (totalMinutes > 0) summaryParts.push(`${totalMinutes}분`);
+
+    container.innerHTML = `
+      <div class="records-tabs">
+        ${tabs.map(tab => `
+          <button class="records-tab ${tab.date.getTime() === currentDate.getTime() ? 'active' : ''}"
+                  data-date="${tab.date.toISOString()}">
+            ${tab.label}
+          </button>
+        `).join('')}
+      </div>
+      <div class="records-date-header">
+        <div class="records-date">${dateStr}</div>
+        <div class="records-summary">${summaryParts.join(' · ') || '기록 없음'}</div>
+      </div>
+      <div class="records-list">
+        ${records.length === 0 ? `
+          <div class="records-empty">
+            <div class="records-empty-icon">📝</div>
+            <div>이 날의 기록이 없어요</div>
+          </div>
+        ` : records.map(record => renderRecordItem(record)).join('')}
+      </div>
+    `;
+
+    container.querySelectorAll('.records-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        currentRecordsDate = new Date(tab.dataset.date);
+        renderRecordsScreen();
+      });
+    });
+
+    container.querySelectorAll('.record-delete-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const recordId = btn.dataset.id;
+        showDialog({
+          title: '기록 삭제',
+          message: '이 기록을 삭제할까요?',
+          onConfirm: () => {
+            Storage.deleteRecord(recordId);
+            renderRecordsScreen();
+            renderTodaySummary();
+            showToast('기록이 삭제됐어요');
+          }
+        });
+      });
+    });
+  }
+
+  function renderRecordItem(record) {
+    const startTime = new Date(record.startedAt);
+    const timeStr = `${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes().toString().padStart(2, '0')}`;
+    const durationMinutes = Math.round(record.duration / 60);
+
+    const categoryIcons = {
+      feeding: '🍼',
+      pumping: '🧴',
+      other: '⏱️'
+    };
+    const icon = categoryIcons[record.category] || '⏱️';
+
+    return `
+      <div class="record-item">
+        <div class="record-time">${timeStr}</div>
+        <div class="record-info">
+          <div class="record-name">
+            <span class="record-icon">${icon}</span>
+            ${record.presetName}
+          </div>
+          <div class="record-duration">${durationMinutes}분</div>
+        </div>
+        <button class="record-delete-btn" data-id="${record.id}" aria-label="삭제">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    `;
+  }
+
+  function formatDateKorean(date) {
+    const days = ['일', '월', '화', '수', '목', '금', '토'];
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const dayOfWeek = days[date.getDay()];
+    return `${year}년 ${month}월 ${day}일 ${dayOfWeek}요일`;
   }
 
   // Nickname

@@ -2,7 +2,8 @@ const Storage = (function() {
   const KEYS = {
     PRESETS: 'timer_presets',
     SETTINGS: 'timer_settings',
-    NICKNAME: 'timer_nickname'
+    NICKNAME: 'timer_nickname',
+    RECORDS: 'timer_records'
   };
 
   const DEFAULT_PRESETS = [
@@ -127,6 +128,7 @@ const Storage = (function() {
     localStorage.removeItem(KEYS.PRESETS);
     localStorage.removeItem(KEYS.SETTINGS);
     localStorage.removeItem(KEYS.NICKNAME);
+    localStorage.removeItem(KEYS.RECORDS);
   }
 
   function getNickname() {
@@ -139,6 +141,85 @@ const Storage = (function() {
     } else {
       localStorage.removeItem(KEYS.NICKNAME);
     }
+  }
+
+  // Records
+  function categorizePreset(name) {
+    const lowerName = name.toLowerCase();
+    if (lowerName.includes('수유') || lowerName.includes('젖') || lowerName.includes('먹이')) {
+      return 'feeding';
+    }
+    if (lowerName.includes('유축') || lowerName.includes('펌프')) {
+      return 'pumping';
+    }
+    return 'other';
+  }
+
+  function getRecords() {
+    const data = localStorage.getItem(KEYS.RECORDS);
+    return data ? JSON.parse(data) : [];
+  }
+
+  function saveRecords(records) {
+    localStorage.setItem(KEYS.RECORDS, JSON.stringify(records));
+  }
+
+  function addRecord(record) {
+    const records = getRecords();
+    const newRecord = {
+      id: 'record_' + generateId(),
+      ...record,
+      category: categorizePreset(record.presetName)
+    };
+    records.push(newRecord);
+    saveRecords(records);
+    return newRecord;
+  }
+
+  function deleteRecord(id) {
+    const records = getRecords();
+    saveRecords(records.filter(r => r.id !== id));
+  }
+
+  function getRecordsByDate(date) {
+    const records = getRecords();
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0);
+    const nextDate = new Date(targetDate);
+    nextDate.setDate(nextDate.getDate() + 1);
+
+    return records.filter(r => {
+      const recordDate = new Date(r.startedAt);
+      return recordDate >= targetDate && recordDate < nextDate;
+    }).sort((a, b) => new Date(a.startedAt) - new Date(b.startedAt));
+  }
+
+  function getTodayRecords() {
+    return getRecordsByDate(new Date());
+  }
+
+  function getDailySummary(date = new Date()) {
+    const records = getRecordsByDate(date);
+    const summary = {
+      feeding: { count: 0, duration: 0 },
+      pumping: { count: 0, duration: 0 },
+      other: { count: 0, duration: 0 },
+      totalDuration: 0
+    };
+
+    records.forEach(r => {
+      if (summary[r.category]) {
+        summary[r.category].count++;
+        summary[r.category].duration += r.duration;
+      }
+      summary.totalDuration += r.duration;
+    });
+
+    return summary;
+  }
+
+  function clearRecords() {
+    localStorage.removeItem(KEYS.RECORDS);
   }
 
   return {
@@ -155,6 +236,14 @@ const Storage = (function() {
     resetAll,
     generateId,
     getNickname,
-    setNickname
+    setNickname,
+    categorizePreset,
+    getRecords,
+    addRecord,
+    deleteRecord,
+    getRecordsByDate,
+    getTodayRecords,
+    getDailySummary,
+    clearRecords
   };
 })();

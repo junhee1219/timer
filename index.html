@@ -44,6 +44,7 @@
       </header>
       <main class="home-content">
         <div id="greeting" class="greeting" style="display:none"></div>
+        <div id="today-summary" class="today-summary" style="display:none"></div>
         <div id="presets-list" class="presets-list"></div>
         <button class="fab" id="add-preset-btn" aria-label="새 타이머 만들기">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -285,6 +286,20 @@
           </div>
         </div>
       </main>
+    </section>
+
+    <!-- 기록 화면 -->
+    <section id="records" class="screen">
+      <header class="header">
+        <button class="header-btn" id="records-back-btn" aria-label="뒤로">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <h1 class="header-title">기록</h1>
+        <div class="header-btn-placeholder"></div>
+      </header>
+      <main class="records-content" id="records-content"></main>
     </section>
 
     <!-- 화면 꺼짐 방지용 무음 비디오 -->
