@@ -32,6 +32,7 @@ const App = (function() {
     setupTimerCallbacks();
     setupEventListeners();
     setupHistoryNavigation();
+    setupMediaSession();
     renderHome();
     renderGreeting();
   }
@@ -59,9 +60,13 @@ const App = (function() {
   }
 
   function setupTimerCallbacks() {
-    timer.onTick = updateTimerDisplay;
+    timer.onTick = (state) => {
+      updateTimerDisplay(state);
+      updateMediaSession(state);
+    };
     timer.onPhaseChange = (state) => {
       updateTimerDisplay(state);
+      updateMediaSession(state);
       elements.timerPhase.animate([
         { opacity: 0, transform: 'translateY(-10px)' },
         { opacity: 1, transform: 'translateY(0)' }
@@ -71,6 +76,7 @@ const App = (function() {
       updateControls('idle');
       elements.timerPhase.textContent = '완료!';
       elements.timerInfo.textContent = '수고했어요';
+      clearMediaSession();
     };
     timer.onLap = renderLapTimes;
   }
@@ -110,7 +116,10 @@ const App = (function() {
     document.getElementById('timer-play-btn').addEventListener('click', () => {
       const state = timer.toggle();
       updateControls(state);
-      if (state === 'running') requestWakeLock();
+      if (state === 'running') {
+        requestWakeLock();
+        updateMediaSession(timer.getState());
+      }
     });
 
     document.getElementById('timer-stop-btn').addEventListener('click', () => {
@@ -120,6 +129,7 @@ const App = (function() {
         onConfirm: () => {
           timer.stop();
           releaseWakeLock();
+          clearMediaSession();
           showScreen('home');
         }
       });
@@ -139,6 +149,7 @@ const App = (function() {
           onConfirm: () => {
             timer.stop();
             releaseWakeLock();
+            clearMediaSession();
             showScreen('home');
           }
         });
@@ -1051,6 +1062,71 @@ const App = (function() {
       }
     }
   });
+
+  // Media Session API - 잠금화면/알림 컨트롤
+  function setupMediaSession() {
+    if (!('mediaSession' in navigator)) return;
+
+    navigator.mediaSession.setActionHandler('play', () => {
+      const state = timer.toggle();
+      updateControls(state);
+      if (state === 'running') requestWakeLock();
+    });
+
+    navigator.mediaSession.setActionHandler('pause', () => {
+      const state = timer.toggle();
+      updateControls(state);
+    });
+
+    navigator.mediaSession.setActionHandler('stop', () => {
+      timer.stop();
+      releaseWakeLock();
+      clearMediaSession();
+      showScreen('home');
+    });
+
+    // 다음 세그먼트로 건너뛰기
+    navigator.mediaSession.setActionHandler('nexttrack', () => {
+      timer.skip();
+    });
+  }
+
+  function updateMediaSession(state) {
+    if (!('mediaSession' in navigator)) return;
+
+    const timeStr = timer.formatTime(state.currentTime);
+    const presetName = state.preset?.name || '타이머';
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: `${state.segmentName} - ${timeStr}`,
+      artist: presetName,
+      album: '타이머',
+      artwork: [
+        { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+        { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' }
+      ]
+    });
+
+    // 재생 상태 업데이트
+    navigator.mediaSession.playbackState = state.state === 'running' ? 'playing' : 'paused';
+
+    // 진행 상태 (일부 브라우저 지원)
+    if ('setPositionState' in navigator.mediaSession && state.totalTime > 0) {
+      try {
+        navigator.mediaSession.setPositionState({
+          duration: state.totalTime,
+          position: state.totalTime - state.currentTime,
+          playbackRate: 1
+        });
+      } catch (e) {}
+    }
+  }
+
+  function clearMediaSession() {
+    if (!('mediaSession' in navigator)) return;
+    navigator.mediaSession.metadata = null;
+    navigator.mediaSession.playbackState = 'none';
+  }
 
   return { init };
 })();
