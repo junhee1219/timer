@@ -1013,7 +1013,13 @@ const App = (function() {
     if (!('wakeLock' in navigator)) return;
     try {
       wakeLock = await navigator.wakeLock.request('screen');
-    } catch (e) {}
+      // Wake Lock이 해제되면 자동으로 재요청
+      wakeLock.addEventListener('release', () => {
+        wakeLock = null;
+      });
+    } catch (e) {
+      console.log('Wake Lock 요청 실패:', e);
+    }
   }
 
   function releaseWakeLock() {
@@ -1022,6 +1028,13 @@ const App = (function() {
       wakeLock = null;
     }
   }
+
+  // 화면이 다시 보이면 Wake Lock 재요청
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && timer.state === 'running') {
+      requestWakeLock();
+    }
+  });
 
   return { init };
 })();

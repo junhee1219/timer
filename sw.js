@@ -1,4 +1,4 @@
-const CACHE_NAME = 'timer-v2';
+const CACHE_NAME = 'timer-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -7,6 +7,9 @@ const ASSETS = [
   './js/timer.js',
   './js/app.js',
   './icons/icon.svg',
+  './icons/icon-180.png',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
   './manifest.json'
 ];
 
