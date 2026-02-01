@@ -7,45 +7,32 @@ const Storage = (function() {
 
   const DEFAULT_PRESETS = [
     {
-      id: 'default-pomodoro',
-      name: '뽀모도로 25/5',
-      type: 'pomodoro',
-      createdAt: new Date().toISOString(),
-      config: {
-        focusDuration: 25 * 60,
-        shortBreakDuration: 5 * 60,
-        longBreakDuration: 15 * 60,
-        cyclesBeforeLongBreak: 4
-      },
-      notification: { soundEnabled: true, vibrationEnabled: true }
-    },
-    {
-      id: 'default-5min',
-      name: '5분 타이머',
-      type: 'simple',
-      createdAt: new Date().toISOString(),
-      config: { duration: 5 * 60 },
-      notification: { soundEnabled: true, vibrationEnabled: true }
-    },
-    {
-      id: 'default-10min',
-      name: '10분 타이머',
-      type: 'simple',
-      createdAt: new Date().toISOString(),
-      config: { duration: 10 * 60 },
-      notification: { soundEnabled: true, vibrationEnabled: true }
-    },
-    {
-      id: 'default-hiit',
-      name: 'HIIT 30/10',
+      id: 'default-suyu',
+      name: '수유',
       type: 'interval',
       createdAt: new Date().toISOString(),
       config: {
         segments: [
-          { name: '운동', duration: 30, color: '#dc3545' },
-          { name: '휴식', duration: 10, color: '#28a745' }
+          { name: '수유', duration: 15 * 60, color: '#E91E63' },
+          { name: '휴식', duration: 10 * 60, color: '#4CAF50' },
+          { name: '수유', duration: 15 * 60, color: '#E91E63' },
+          { name: '휴식', duration: 10 * 60, color: '#4CAF50' }
         ],
-        cycles: 8
+        cycles: 1
+      },
+      notification: { soundEnabled: true, vibrationEnabled: true }
+    },
+    {
+      id: 'default-yuchuk',
+      name: '유축',
+      type: 'interval',
+      createdAt: new Date().toISOString(),
+      config: {
+        segments: [
+          { name: '유축', duration: 5 * 60, color: '#2196F3' },
+          { name: '휴식', duration: 1 * 60, color: '#4CAF50' }
+        ],
+        cycles: 6
       },
       notification: { soundEnabled: true, vibrationEnabled: true }
     }

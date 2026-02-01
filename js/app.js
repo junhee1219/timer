@@ -1010,29 +1010,45 @@ const App = (function() {
 
   async function requestWakeLock() {
     if (!Storage.getSettings().keepScreenOn) return;
-    if (!('wakeLock' in navigator)) return;
-    try {
-      wakeLock = await navigator.wakeLock.request('screen');
-      // Wake Lock이 해제되면 자동으로 재요청
-      wakeLock.addEventListener('release', () => {
-        wakeLock = null;
-      });
-    } catch (e) {
-      console.log('Wake Lock 요청 실패:', e);
+
+    // iOS용 비디오 재생 방식
+    const video = document.getElementById('wake-video');
+    if (video) {
+      video.play().catch(() => {});
+    }
+
+    // 표준 Wake Lock API (Android/Desktop)
+    if ('wakeLock' in navigator) {
+      try {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', () => {
+          wakeLock = null;
+        });
+      } catch (e) {}
     }
   }
 
   function releaseWakeLock() {
+    // 비디오 정지
+    const video = document.getElementById('wake-video');
+    if (video) {
+      video.pause();
+    }
+
+    // Wake Lock 해제
     if (wakeLock) {
       wakeLock.release();
       wakeLock = null;
     }
   }
 
-  // 화면이 다시 보이면 Wake Lock 재요청
+  // 화면이 다시 보이면 타이머 동기화 및 Wake Lock 재요청
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && timer.state === 'running') {
-      requestWakeLock();
+    if (document.visibilityState === 'visible') {
+      if (timer.state === 'running') {
+        timer.sync(); // 백그라운드에서 경과한 시간 동기화
+        requestWakeLock();
+      }
     }
   });
 

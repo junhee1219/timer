@@ -13,6 +13,10 @@ const TimerEngine = (function() {
       this.lapTimes = [];
       this.lastLapTime = 0;
 
+      // 백그라운드 안전을 위한 실제 시간 추적
+      this.segmentStartTime = null;  // 세그먼트 시작 시각 (Date.now())
+      this.segmentStartValue = 0;    // 세그먼트 시작 시 currentTime 값
+
       this.onTick = null;
       this.onPhaseChange = null;
       this.onComplete = null;
@@ -73,28 +77,52 @@ const TimerEngine = (function() {
       if (this.state === 'running') return;
       this.state = 'running';
       this.lastTick = Date.now();
+
+      // 세그먼트 시작 시간 기록 (백그라운드 복귀 시 사용)
+      this.segmentStartTime = Date.now();
+      this.segmentStartValue = this.currentTime;
+
       this.intervalId = setInterval(() => this.tick(), 10);
     }
 
     tick() {
       const now = Date.now();
-      const delta = (now - this.lastTick) / 1000;
-      this.lastTick = now;
 
       if (this.preset.type === 'stopwatch') {
-        this.currentTime += delta;
+        // 스톱워치: 실제 경과 시간 기반
+        const elapsed = (now - this.segmentStartTime) / 1000;
+        this.currentTime = this.segmentStartValue + elapsed;
+        this.lastTick = now;
         this.onTick?.(this.getState());
         return;
       }
 
-      this.currentTime -= delta;
+      // 카운트다운: 실제 경과 시간 기반으로 계산
+      const elapsed = (now - this.segmentStartTime) / 1000;
+      this.currentTime = this.segmentStartValue - elapsed;
+      this.lastTick = now;
 
-      if (this.currentTime <= 0) {
-        this.currentTime = 0;
+      // 세그먼트 완료 처리 (백그라운드에서 여러 세그먼트 지났을 수 있음)
+      while (this.currentTime <= 0 && this.state === 'running') {
+        const overflow = -this.currentTime;
         this.handleSegmentComplete();
+
+        // 완료되었으면 루프 종료
+        if (this.state !== 'running') break;
+
+        // 다음 세그먼트 시작 시간 조정
+        this.segmentStartTime = now - (overflow * 1000);
+        this.segmentStartValue = this.totalTime;
+        this.currentTime = this.segmentStartValue - overflow;
       }
 
       this.onTick?.(this.getState());
+    }
+
+    // 백그라운드에서 복귀 시 호출
+    sync() {
+      if (this.state !== 'running') return;
+      this.tick();
     }
 
     handleSegmentComplete() {
@@ -140,12 +168,17 @@ const TimerEngine = (function() {
       this.state = 'paused';
       clearInterval(this.intervalId);
       this.intervalId = null;
+
+      // 일시정지 시 현재 시간을 시작값으로 저장 (재개 시 사용)
+      this.segmentStartValue = this.currentTime;
     }
 
     toggle() {
       if (this.state === 'running') {
         this.pause();
       } else {
+        // 재개 시 시작 시간 갱신
+        this.segmentStartTime = Date.now();
         this.start();
       }
       return this.state;
@@ -183,6 +216,11 @@ const TimerEngine = (function() {
       // progress: 0 = 시작, 1 = 끝
       const clampedProgress = Math.max(0, Math.min(1, progress));
       this.currentTime = this.totalTime * (1 - clampedProgress);
+
+      // 시작값 갱신 (백그라운드 계산용)
+      this.segmentStartTime = Date.now();
+      this.segmentStartValue = this.currentTime;
+
       this.onTick?.(this.getState());
     }
 
