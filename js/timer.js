@@ -196,6 +196,13 @@ const TimerEngine = (function() {
     skip() {
       if (!this.preset || this.preset.type === 'simple' || this.preset.type === 'stopwatch') return;
       this.handleSegmentComplete();
+
+      // skip 후 새 세그먼트 시작 시간 갱신
+      if (this.state === 'running') {
+        this.segmentStartTime = Date.now();
+        this.segmentStartValue = this.currentTime;
+      }
+
       this.onTick?.(this.getState());
     }
 
