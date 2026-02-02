@@ -80,7 +80,13 @@ const App = (function() {
       elements.timerPhase.textContent = '완료!';
       elements.timerInfo.textContent = '수고했어요';
       clearMediaSession();
+      releaseWakeLock();
       saveTimerRecord(state);
+
+      setTimeout(() => {
+        showScreen('home');
+        showToast('타이머가 완료됐어요');
+      }, 1500);
     };
     timer.onLap = renderLapTimes;
   }

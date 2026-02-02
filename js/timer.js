@@ -153,8 +153,8 @@ const TimerEngine = (function() {
       if (this.preset.type === 'pomodoro') {
         this.currentSegmentIndex++;
         if (this.currentSegmentIndex >= this.segments.length) {
-          this.currentCycle++;
-          this.currentSegmentIndex = 0;
+          this.complete();
+          return;
         }
         const nextSegment = this.segments[this.currentSegmentIndex];
         this.currentTime = nextSegment.duration;
