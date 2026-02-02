@@ -197,11 +197,12 @@ const TimerEngine = (function() {
       if (!this.preset || this.preset.type === 'simple' || this.preset.type === 'stopwatch') return;
       this.handleSegmentComplete();
 
+      // complete()가 호출되었으면 여기서 종료
+      if (this.state !== 'running') return;
+
       // skip 후 새 세그먼트 시작 시간 갱신
-      if (this.state === 'running') {
-        this.segmentStartTime = Date.now();
-        this.segmentStartValue = this.currentTime;
-      }
+      this.segmentStartTime = Date.now();
+      this.segmentStartValue = this.currentTime;
 
       this.onTick?.(this.getState());
     }
