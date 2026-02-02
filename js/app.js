@@ -77,16 +77,10 @@ const App = (function() {
     };
     timer.onComplete = (state) => {
       updateControls('idle');
-      elements.timerPhase.textContent = '완료!';
-      elements.timerInfo.textContent = '수고했어요';
       clearMediaSession();
       releaseWakeLock();
       saveTimerRecord(state);
-
-      setTimeout(() => {
-        showScreen('home');
-        showToast('타이머가 완료됐어요');
-      }, 1500);
+      showCompleteOverlay();
     };
     timer.onLap = renderLapTimes;
   }
@@ -637,6 +631,7 @@ const App = (function() {
     timer.load(preset);
     elements.timerTitle.textContent = preset.name;
     currentTimerStartedAt = null;
+    hideCompleteOverlay();
 
     const isStopwatch = preset.type === 'stopwatch';
     const isSimple = preset.type === 'simple';
@@ -1131,6 +1126,41 @@ const App = (function() {
     const day = date.getDate();
     const dayOfWeek = days[date.getDay()];
     return `${year}년 ${month}월 ${day}일 ${dayOfWeek}요일`;
+  }
+
+  // Complete Overlay
+  function showCompleteOverlay() {
+    const overlay = document.getElementById('complete-overlay');
+    overlay.classList.add('show');
+    createConfetti();
+
+    overlay.onclick = () => {
+      hideCompleteOverlay();
+      showScreen('home');
+    };
+  }
+
+  function hideCompleteOverlay() {
+    const overlay = document.getElementById('complete-overlay');
+    overlay.classList.remove('show');
+    const container = document.getElementById('confetti-container');
+    container.innerHTML = '';
+  }
+
+  function createConfetti() {
+    const container = document.getElementById('confetti-container');
+    container.innerHTML = '';
+    const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#5f27cd', '#00d2d3', '#1dd1a1'];
+
+    for (let i = 0; i < 50; i++) {
+      const confetti = document.createElement('div');
+      confetti.className = 'confetti';
+      confetti.style.left = Math.random() * 100 + '%';
+      confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+      confetti.style.animationDelay = Math.random() * 0.5 + 's';
+      container.appendChild(confetti);
+    }
   }
 
   // Nickname

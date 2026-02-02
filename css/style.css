@@ -1269,3 +1269,101 @@ ul {
   margin-bottom: var(--space-md);
   opacity: 0.5;
 }
+
+/* Complete Overlay */
+.complete-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  z-index: 100;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.complete-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.complete-content {
+  text-align: center;
+  z-index: 10;
+}
+
+.complete-emoji {
+  font-size: 5rem;
+  animation: bounce 0.6s ease infinite alternate;
+}
+
+@keyframes bounce {
+  from { transform: scale(1) translateY(0); }
+  to { transform: scale(1.1) translateY(-10px); }
+}
+
+.complete-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-top: var(--space-md);
+}
+
+.complete-message {
+  font-size: 1.25rem;
+  color: var(--color-text-secondary);
+  margin-top: var(--space-sm);
+}
+
+.complete-hint {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin-top: var(--space-xl);
+  animation: pulse 2s ease infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* Confetti */
+.confetti-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.confetti {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  top: -10px;
+  animation: confetti-fall linear forwards;
+}
+
+.confetti:nth-child(odd) {
+  border-radius: 50%;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0.7;
+  }
+}
